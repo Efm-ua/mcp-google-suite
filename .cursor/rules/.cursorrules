@@ -1,0 +1,226 @@
+Assume you are a Sr software engineer who has an experience in developing AI agents, experience with python.
+
+Important Rules
+- Use uv and pyproject to manage and track dependency.
+- Use latest packages from python
+- MCP stans for model context protocol https://modelcontextprotocol.io/introduction
+- Create necessary .gitignore entries
+- Update the README.md keep it minimal 
+- Use this as an example https://github.com/modelcontextprotocol/python-sdk?tab=readme-ov-file#core-concepts
+- Do not use Fast API or other API management framework use Pure MCP eg uv add "mcp" 
+- use Fast MCP client
+
+
+Instructions
+
+Based on the project requirement document create me a MCP server for google drive , docs and sheets operations. use @https://github.com/modelcontextprotocol/python-sdk?tab=readme-ov-file#core-concepts  as an example and for creating MCP server no need to use other frameworks like Fast API
+
+
+# Project Requirements Document (PRD)
+## Google Workspace Integration MCP Server
+
+### 1. Introduction
+
+#### 1.1 Purpose
+This document outlines the requirements for developing a Model Context Protocol (MCP) server that integrates with Google Workspace (Drive, Docs, and Sheets) to expose these capabilities as tools for Large Language Model (LLM) providers. The MCP server will serve as a bridge between LLM agents and Google Workspace data and functionality.
+
+#### 1.2 Scope
+The MCP server will provide a standardized API for LLM agents to perform operations on Google Drive, Google Docs, and Google Sheets, including creating, reading, updating, and organizing content. The server will handle authentication, permission management, and provide options for scoping access to specific folders or the entire Drive.
+
+#### 1.3 Definitions, Acronyms, and Abbreviations
+- **MCP**: Model Context Protocol - A standardized protocol for LLM tools integration
+- **LLM**: Large Language Model
+- **OAuth**: Open Authorization protocol
+- **API**: Application Programming Interface
+- **PRD**: Project Requirements Document
+
+#### 1.4 Target Audience
+This PRD is intended for:
+- Development team implementing the MCP server
+- Internal stakeholders overseeing the project
+- LLM integration specialists who will connect agents to the MCP server
+
+### 2. Product Overview
+
+#### 2.1 Product Perspective
+The MCP server will operate as a middleware component that connects LLM agents to Google Workspace. It will expose Google Workspace operations as standardized tools that follow the Model Context Protocol, allowing LLMs to manipulate documents and data programmatically.
+
+#### 2.2 User Classes and Characteristics
+Primary users:
+- Internal organization members using LLM agents that need to interact with Google Workspace
+- Developers integrating LLM agents with Google Workspace capabilities
+
+#### 2.3 Product Features Overview
+- Google Drive operations (search, create, download, organize)
+- Google Docs operations (create, modify, format, extract)
+- Google Sheets operations (create, modify, search, style)
+- Authentication and authorization management
+- Configurable access scoping
+
+#### 2.4 Operating Environment
+- The MCP server will operate in a cloud environment
+- Must integrate with Google Workspace APIs
+- Must implement Model Context Protocol specifications for tools
+
+### 3. Functional Requirements
+
+#### 3.1 Authentication and Authorization
+
+| ID | Requirement | Priority | Description |
+|----|-------------|----------|-------------|
+| AUTH-1 | OAuth Implementation | High | Implement OAuth 2.0 for authentication with Google Workspace APIs |
+| AUTH-2 | Scoped Access | Medium | Provide option to limit access to specific folders within Google Drive |
+| AUTH-3 | Permissions Management | High | Respect and enforce Google Workspace permissions for all operations |
+| AUTH-4 | Token Refresh | High | Handle token expiration and refresh automatically |
+| AUTH-5 | Credentials Storage | High | Securely store and manage OAuth credentials |
+
+#### 3.2 Google Drive Operations
+
+| ID | Requirement | Priority | Description |
+|----|-------------|----------|-------------|
+| DRIVE-1 | Search Files | High | Search files and folders by name, type, and content |
+| DRIVE-2 | Create Files/Folders | High | Create new files and folders in Drive |
+| DRIVE-3 | Download Files | High | Download files from Drive to the MCP server for processing |
+| DRIVE-4 | Move/Organize | Medium | Move files between folders for organization |
+| DRIVE-5 | File Metadata | Medium | Read and update file metadata (name, description, etc.) |
+| DRIVE-6 | Share Settings | Medium | View and modify sharing settings for files and folders |
+
+#### 3.3 Google Docs Operations
+
+| ID | Requirement | Priority | Description |
+|----|-------------|----------|-------------|
+| DOCS-1 | Create Documents | High | Create new Google Docs with specified content |
+| DOCS-2 | Search Documents | High | Search for documents by title and content |
+| DOCS-3 | Read Content | High | Extract text and structure from documents |
+| DOCS-4 | Modify Content | High | Add, update, or delete content within documents |
+| DOCS-5 | Apply Formatting | Medium | Apply text formatting according to brand guidelines |
+| DOCS-6 | Download Documents | Medium | Download documents in various formats (PDF, DOCX, etc.) |
+| DOCS-7 | Extract Structured Content | Medium | Parse and extract structured data from documents |
+
+#### 3.4 Google Sheets Operations
+
+| ID | Requirement | Priority | Description |
+|----|-------------|----------|-------------|
+| SHEETS-1 | Create Spreadsheets | High | Create new Google Sheets with specified content |
+| SHEETS-2 | Read Content | High | Read data from cells, rows, and columns |
+| SHEETS-3 | Modify Cells | High | Update cell values in existing spreadsheets |
+| SHEETS-4 | Row Operations | High | Add, delete, and modify entire rows |
+| SHEETS-5 | Column Operations | High | Add, delete, and modify entire columns |
+| SHEETS-6 | Search Content | Medium | Find cells matching specified criteria |
+| SHEETS-7 | Apply Styling | Medium | Apply formatting and styling to cells |
+| SHEETS-8 | Formula Support | Medium | Add and update formulas in cells |
+
+#### 3.5 MCP Protocol Implementation
+
+| ID | Requirement | Priority | Description |
+|----|-------------|----------|-------------|
+| MCP-1 | Tool Definitions | High | Define tools according to MCP specifications |
+| MCP-2 | Parameter Schemas | High | Define clear parameter schemas for each tool |
+| MCP-3 | Response Formatting | High | Format responses according to MCP specifications |
+| MCP-4 | Error Handling | High | Implement standard error handling according to MCP |
+| MCP-5 | Tool Discovery | Medium | Provide tool discovery endpoint |
+
+### 4. Non-Functional Requirements
+
+#### 4.1 Performance
+
+| ID | Requirement | Priority | Description |
+|----|-------------|----------|-------------|
+| PERF-1 | Response Time | High | Server should respond to 95% of API requests within 500ms |
+| PERF-2 | Throughput | Medium | Support at least 100 concurrent requests |
+| PERF-3 | File Size Handling | Medium | Support files up to 50MB in size |
+
+
+### 5. Interfaces
+
+#### 5.1 API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `/auth` | Authentication endpoints |
+| `/drive` | Google Drive operations |
+| `/docs` | Google Docs operations |
+| `/sheets` | Google Sheets operations |
+| `/tools` | Tool discovery and metadata |
+
+#### 5.2 External APIs
+
+| API | Description |
+|-----|-------------|
+| Google Drive API | For file and folder operations |
+| Google Docs API | For document operations |
+| Google Sheets API | For spreadsheet operations |
+| Google OAuth 2.0 | For authentication |
+
+### 6. Implementation Considerations
+
+#### 6.1 Technology Stack
+- Programming Language: [ Python]
+
+#### 6.2 Dependencies
+- Google API Client Libraries
+- OAuth 2.0 libraries
+- MCP Protocol libraries/SDK
+
+#### 6.3 Rate Limiting and Quotas
+The implementation must respect Google API rate limits and quotas. Implement caching and request throttling to manage quota usage.
+
+<!-- ### 7. Testing Requirements
+
+#### 7.1 Unit Testing
+- All API endpoints must have unit tests
+- Authentication flows must be thoroughly tested
+- Error handling must be verified
+
+#### 7.2 Integration Testing
+- End-to-end testing with Google Workspace
+- LLM agent integration testing
+- Performance testing under expected load -->
+
+### 8. Project Timeline
+
+
+### 9. Risks and Mitigations
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|------------|
+| Google API changes | High | Medium | Monitor API announcements, implement version handling |
+| OAuth token expiration | Medium | High | Implement robust token refresh mechanisms |
+| Rate limiting | Medium | High | Implement caching and request queuing |
+| Permission issues | High | Medium | Clear error messages, permission verification |
+
+### 10. Appendix
+
+#### 10.1 Google API Permissions
+The following OAuth scopes will be required:
+- `https://www.googleapis.com/auth/drive` (or more limited scopes if possible)
+- `https://www.googleapis.com/auth/documents`
+- `https://www.googleapis.com/auth/spreadsheets`
+
+#### 10.2 MCP Tool Schema Examples
+
+Example Google Docs tool definition:
+```json
+{
+  "name": "google_docs_create",
+  "description": "Creates a new Google Doc with specified content",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "description": "Title of the document"
+      },
+      "content": {
+        "type": "string",
+        "description": "Content to add to the document"
+      },
+      "parent_folder_id": {
+        "type": "string",
+        "description": "ID of the parent folder (optional)"
+      }
+    },
+    "required": ["title", "content"]
+  }
+}
+```
