@@ -377,7 +377,7 @@ class GoogleWorkspaceMCPServer:
             raise
 
     @asynccontextmanager
-    async def lifespan(self, server: Server) -> AsyncIterator[GoogleWorkspaceContext]:
+    async def lifespan(self) -> AsyncIterator[GoogleWorkspaceContext]:
         """Manage Google Workspace services lifecycle."""
         logger.info("Starting server lifespan")
         try:
@@ -422,37 +422,15 @@ class GoogleWorkspaceMCPServer:
         finally:
             logger.info("Server lifespan ending")
 
-    async def run(self, read_stream, write_stream):
+    async def run(self, read_stream, write_stream, init_options: InitializationOptions):
         """Run the MCP server."""
         logger.info("Starting server run")
         try:
-            # Initialize context
-            auth = GoogleAuth(config=self.config)
-            drive = DriveService(auth)
-            docs = DocsService(auth)
-            sheets = SheetsService(auth)
-            self._context = GoogleWorkspaceContext(
-                auth=auth,
-                drive=drive,
-                docs=docs,
-                sheets=sheets
-            )
-            
-            # Create initialization options
-            logger.debug("Creating initialization options")
-            init_options = InitializationOptions(
-                server_name="mcp-google-suite",
-                server_version="0.1.0",
-                capabilities=self.server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
-                ),
-            )
-            
-            # Start server
-            logger.debug("Starting server with initialization options")
-            await self.server.run(read_stream, write_stream, init_options)
-            logger.info("Server run completed")
+            async with self.lifespan():
+                # Start server with transport streams
+                logger.debug("Starting server with transport streams")
+                await self.server.run(read_stream, write_stream, init_options)
+                logger.info("Server run completed")
         except Exception as e:
             logger.error(f"Server error: {e}", exc_info=True)
             raise 

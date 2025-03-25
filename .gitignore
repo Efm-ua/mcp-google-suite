@@ -161,3 +161,10 @@ cython_debug/
  
 .gdrive-server-credentials.json
  gcp-oauth.keys.json
+*.log
+*.log.*
+*.log.*.*
+*.log.*.*.*
+*.log.*.*.*.*
+*.log.*.*.*.*.*
+*.log.*.*.*.*.*.*

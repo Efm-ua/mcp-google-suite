@@ -13,11 +13,16 @@ dependencies = [
     "google-api-python-client>=2.120.0",
     "pydantic>=2.6.3",
     "tabulate>=0.9.0",
+    "starlette>=0.36.3",
+    "uvicorn>=0.27.1",
 ]
 requires-python = ">=3.11"
 
 [project.scripts]
-mcp-google = "mcp_google_suite.__main__:main"
+# Main command for running the server
+mcp-google = "mcp_google_suite.launcher:main"
+# Command for running with environment variables and arguments
+mcp-google-run = "mcp_google_suite.launcher:run_server"
 
 [build-system]
 requires = ["hatchling"]

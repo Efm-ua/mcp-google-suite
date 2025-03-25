@@ -7,12 +7,15 @@ A Model Context Protocol (MCP) server that provides tools for interacting with G
 - Google Drive operations (search, create folders)
 - Google Docs operations (create, read, update)
 - Google Sheets operations (create, read, update)
+- Support for stdio, SSE, and WebSocket transport modes
+- Compatible with MCP Inspector for testing and debugging
 
 ## Prerequisites
 
-- Python 3.9 or higher
+- Python 3.11 or higher
 - Google Cloud Project with Google Workspace APIs enabled
 - OAuth 2.0 credentials for Google Workspace
+- Node.js and npm (for MCP Inspector)
 
 ## Installation
 
@@ -30,20 +33,6 @@ source .venv/bin/activate  # On Unix/macOS
 uv pip install -e .
 ```
 
-```bash
-uv python -m mcp_google_suite auth
-uv python -m mcp_google_suite run
-
-uv --directory /Users/ashok/projects/adex/mcp-servers/mcp-google-suite run mcp-google
-```
-
-```bash
-mcp-google auth
-
-# Start the server
-mcp-google run
-```
-
 3. Set up Google OAuth credentials:
    - Go to the [Google Cloud Console](https://console.cloud.google.com)
    - Create a new project or select an existing one
@@ -53,23 +42,57 @@ mcp-google run
 
 ## Usage
 
-1. Start the MCP server:
+### Direct Server Execution
+
+1. Start the server in stdio mode (default):
 ```bash
-python -m mcp_google_suite
+mcp-google
+# or
+mcp-google run
 ```
 
-2. The server will start and expose the following tools:
+2. Start the server in WebSocket mode:
+```bash
+mcp-google run --mode ws
+```
 
-### Drive Tools
+3. Run authentication:
+```bash
+mcp-google auth
+```
+
+### Using MCP Inspector
+
+The MCP Inspector provides a graphical interface for testing and debugging your MCP server.
+
+1. Install the MCP Inspector:
+```bash
+npm install -g @modelcontextprotocol/inspector
+```
+
+2. Run the server with the inspector:
+```bash
+npx @modelcontextprotocol/inspector uv run mcp-google
+```
+
+The inspector will:
+- Start your server in stdio mode
+- Provide a web interface for testing available tools
+- Show request/response data
+- Allow interactive testing of all server capabilities
+
+### Available Tools
+
+#### Drive Tools
 - `drive_search_files`: Search for files in Google Drive
 - `drive_create_folder`: Create a new folder in Google Drive
 
-### Docs Tools
+#### Docs Tools
 - `docs_create`: Create a new Google Doc
 - `docs_get_content`: Get the contents of a Google Doc
 - `docs_update_content`: Update the content of a Google Doc
 
-### Sheets Tools
+#### Sheets Tools
 - `sheets_create`: Create a new Google Sheet
 - `sheets_get_values`: Get values from a Google Sheet range
 - `sheets_update_values`: Update values in a Google Sheet range
@@ -92,19 +115,6 @@ python -m mcp_google_suite
     "parameters": {
         "query": "name contains 'report'",
         "page_size": 10
-    }
-}
-
-# Example: Update sheet values
-{
-    "tool": "sheets_update_values",
-    "parameters": {
-        "spreadsheet_id": "your-spreadsheet-id",
-        "range": "Sheet1!A1:B2",
-        "values": [
-            ["A1", "B1"],
-            ["A2", "B2"]
-        ]
     }
 }
 ```
@@ -137,6 +147,29 @@ Replace `/path/to/` with the absolute paths to your credential files:
 - `GOOGLE_OAUTH_CREDENTIALS`: Path to the OAuth client credentials file (`gcp-oauth.keys.json`)
 
 Make sure to use absolute paths to ensure the files can be found regardless of where the server is started from.
+
+## Development and Testing
+
+### Using MCP Inspector for Development
+
+The MCP Inspector is a valuable tool for development and testing:
+
+1. It provides real-time feedback on:
+   - Tool registration and availability
+   - Request/response format
+   - Error handling
+   - Authentication status
+
+2. Interactive testing features:
+   - Test tools with custom parameters
+   - View detailed request/response logs
+   - Validate tool schemas
+   - Debug authentication issues
+
+To start development with the inspector:
+```bash
+npx @modelcontextprotocol/inspector uv run mcp-google
+```
 
 ## Security Considerations
 
