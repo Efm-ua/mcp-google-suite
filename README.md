@@ -9,6 +9,7 @@ A Model Context Protocol (MCP) server that provides tools for interacting with G
 - Google Sheets operations (create, read, update)
 - Support for stdio, SSE, and WebSocket transport modes
 - Compatible with MCP Inspector for testing and debugging
+- Integration with MCP-compatible clients like Cursor
 
 ## Prerequisites
 
@@ -16,6 +17,7 @@ A Model Context Protocol (MCP) server that provides tools for interacting with G
 - Google Cloud Project with Google Workspace APIs enabled
 - OAuth 2.0 credentials for Google Workspace
 - Node.js and npm (for MCP Inspector)
+- `uv` package manager (recommended)
 
 ## Installation
 
@@ -37,10 +39,24 @@ uv pip install -e .
    - Go to the [Google Cloud Console](https://console.cloud.google.com)
    - Create a new project or select an existing one
    - Enable the Google Drive, Google Docs, and Google Sheets APIs
+   - Configure OAuth consent screen
    - Create OAuth 2.0 credentials (Desktop application)
-   - Download the credentials and save them as `credentials.json` in the project root
+   - Download the credentials and save them as `oauth.keys.json` in `~/.google/` directory
 
 ## Usage
+
+### Authentication
+
+Before using the server, you need to authenticate with Google:
+
+```bash
+mcp-google auth
+```
+
+This will:
+1. Look for OAuth credentials in `~/.google/oauth.keys.json`
+2. Open a browser window for Google authentication
+3. Save the server credentials to `~/.google/server-creds.json`
 
 ### Direct Server Execution
 
@@ -56,10 +72,34 @@ mcp-google run
 mcp-google run --mode ws
 ```
 
-3. Run authentication:
-```bash
-mcp-google auth
+### Using with MCP-Compatible Clients
+
+The server can be integrated with MCP-compatible clients like Cursor. Here's how to set it up:
+
+1. Create an MCP configuration file (e.g., `mcp-config.json`):
+```json
+{
+  "mcpServers": {
+    "mcp-google-suite": {
+      "command": "uv",
+      "args": ["--directory", "WORKSPACE_DIR", "run", "mcp-google"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "~/.google/server-creds.json",
+        "GOOGLE_OAUTH_CREDENTIALS": "~/.google/oauth.keys.json"
+      }
+    }
+  }
+}
 ```
+
+2. Configure your client to use this configuration file.
+
+3. The server will automatically:
+   - Use the specified credential paths
+   - Handle authentication when needed
+   - Provide Google Workspace tools to your client
+
+Note: Always use `uv` for managing the Python environment and running the server to ensure consistent behavior.
 
 ### Using MCP Inspector
 
@@ -119,34 +159,52 @@ The inspector will:
 }
 ```
 
-## Authentication
+## Credential Management
 
-On first run, the server will open a browser window for OAuth authentication. After successful authentication, the credentials will be saved to `token.json` for future use.
+The server uses two types of credentials and follows a specific precedence order for finding them:
 
-## MCP Server Configuration
+1. OAuth Credentials:
+   - Primary location: `GOOGLE_OAUTH_CREDENTIALS` environment variable
+   - Fallback: `~/.google/oauth.keys.json` (default)
+   - Contains client ID and client secret
+   - Required for initial setup
 
-To configure the MCP server with the required Google credentials, use the following configuration in your MCP configuration file:
+2. Server Credentials:
+   - Primary location: `GOOGLE_APPLICATION_CREDENTIALS` environment variable
+   - Fallback: `~/.google/server-creds.json` (default)
+   - Generated during authentication
+   - Contains access and refresh tokens
+   - Created automatically when running `mcp-google auth`
 
-```json
-{
-  "mcpServers": {
-    "mcp-google-suite": {
-      "command": "uv",
-      "args": ["--directory",WORKSPACE_DIR, "run", "mcp-google"],
-      "env": {
-        "GOOGLE_APPLICATION_CREDENTIALS": "/path/to/.gdrive-server-creds.json",
-        "GOOGLE_OAUTH_CREDENTIALS": "/path/to/gcp-oauth.keys.json"
-      }
-    }
-  }
-}
-```
+### Credential Precedence
 
-Replace `/path/to/` with the absolute paths to your credential files:
-- `GOOGLE_APPLICATION_CREDENTIALS`: Path to the service account credentials file (`.gdrive-server-creds.json`)
-- `GOOGLE_OAUTH_CREDENTIALS`: Path to the OAuth client credentials file (`gcp-oauth.keys.json`)
+The server looks for credentials in the following order:
 
-Make sure to use absolute paths to ensure the files can be found regardless of where the server is started from.
+1. Environment Variables:
+   ```bash
+   export GOOGLE_APPLICATION_CREDENTIALS="/path/to/server-creds.json"
+   export GOOGLE_OAUTH_CREDENTIALS="/path/to/oauth.keys.json"
+   ```
+
+2. Configuration File:
+   Create a `config.json` in the project root:
+   ```json
+   {
+       "credentials": {
+           "server_credentials": "~/.google/server-creds.json",
+           "oauth_credentials": "~/.google/oauth.keys.json"
+       }
+   }
+   ```
+
+3. Default Locations:
+   - Server credentials: `~/.google/server-creds.json`
+   - OAuth credentials: `~/.google/oauth.keys.json`
+
+Note: Environment variables take precedence over both the config.json and default locations. This is particularly useful when:
+- Running in different environments (development, production)
+- Using CI/CD pipelines
+- Integrating with MCP-compatible clients like Cursor
 
 ## Development and Testing
 
@@ -173,9 +231,11 @@ npx @modelcontextprotocol/inspector uv run mcp-google
 
 ## Security Considerations
 
-- Keep your `credentials.json` and `token.json` files secure
+- Keep your credential files secure
 - Use appropriate scopes in the OAuth consent screen
 - Follow the principle of least privilege when requesting access
+- Never commit credential files to version control
+- Always use `uv` for managing the Python environment
 
 ## Contributing
 

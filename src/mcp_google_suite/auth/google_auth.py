@@ -7,7 +7,7 @@ from google.auth.transport.requests import Request
 import os
 import json
 import asyncio
-from mcp_google_suite.config import Config, OAuthConfig, DEFAULT_KEYS_FILE, DEFAULT_CREDENTIALS_FILE
+from mcp_google_suite.config import Config, DEFAULT_SERVER_CREDS, DEFAULT_OAUTH_CREDS
 
 SCOPES = [
     'https://www.googleapis.com/auth/drive',
@@ -23,41 +23,45 @@ class GoogleAuth:
         self.config = config or Config.load(config_path)
         self.creds: Optional[Credentials] = None
         self._creds_lock = asyncio.Lock()
+        # Ensure credentials directory exists
+        self.config.ensure_credentials_dir()
 
     async def authenticate(self) -> None:
         """Run the authentication flow and save credentials."""
-        if not os.path.exists(self.config.oauth.keys_file):
+        oauth_creds_path = self.config.credentials.expanded_oauth_credentials
+        server_creds_path = self.config.credentials.expanded_server_credentials
+
+        if not os.path.exists(oauth_creds_path):
             raise FileNotFoundError(
-                f"OAuth keys file not found at {self.config.oauth.keys_file}. "
+                f"OAuth keys file not found at {oauth_creds_path}. "
                 "Please follow these steps:\n"
                 "1. Create a new Google Cloud project\n"
                 "2. Enable the Google Drive, Docs, and Sheets APIs\n"
                 "3. Configure OAuth consent screen\n"
                 "4. Create OAuth Client ID for Desktop App\n"
-                "5. Download the JSON file and save as 'gcp-oauth.keys.json'\n"
-                "   in the root directory"
+                "5. Download the JSON file and save as 'oauth.keys.json'\n"
+                "   in the ~/.google directory"
             )
-        print(f"Authenticating Saving to  {self.config.oauth.credentials_file}")
+        print(f"Authenticating and saving credentials to {server_creds_path}")
         
         # Run the flow in a thread since it's blocking
         flow = await asyncio.to_thread(
             InstalledAppFlow.from_client_secrets_file,
-            self.config.oauth.keys_file, 
+            oauth_creds_path, 
             SCOPES
         )
         self.creds = await asyncio.to_thread(flow.run_local_server, port=0)
 
         # Save the credentials
-        await asyncio.to_thread(os.makedirs, os.path.dirname(self.config.oauth.credentials_file), exist_ok=True)
         await asyncio.to_thread(self._save_credentials)
 
         print(f"\nAuthentication successful!")
-        print(f"Credentials saved to: {self.config.oauth.credentials_file}")
+        print(f"Credentials saved to: {server_creds_path}")
 
     def _save_credentials(self) -> None:
         """Save credentials to file (helper method for async operations)."""
         if self.creds:
-            with open(self.config.oauth.credentials_file, 'w') as f:
+            with open(self.config.credentials.expanded_server_credentials, 'w') as f:
                 f.write(self.creds.to_json())
 
     async def get_credentials(self) -> Credentials:
@@ -72,10 +76,11 @@ class GoogleAuth:
                 return self.creds
 
             # Try to load saved credentials
-            if os.path.exists(self.config.oauth.credentials_file):
+            server_creds_path = self.config.credentials.expanded_server_credentials
+            if os.path.exists(server_creds_path):
                 self.creds = await asyncio.to_thread(
                     Credentials.from_authorized_user_file,
-                    self.config.oauth.credentials_file, 
+                    server_creds_path, 
                     SCOPES
                 )
                 

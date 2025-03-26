@@ -6,25 +6,40 @@ from typing import Optional
 import json
 from pydantic import BaseModel, Field
 
+# Default paths
+DEFAULT_GOOGLE_DIR = os.path.expanduser("~/.google")
+DEFAULT_SERVER_CREDS = os.path.join(DEFAULT_GOOGLE_DIR, "server-creds.json")
+DEFAULT_OAUTH_CREDS = os.path.join(DEFAULT_GOOGLE_DIR, "oauth.keys.json")
 
-DEFAULT_ROOT_DIR = os.path.dirname(os.path.join(os.getcwd(),"mcp-google-suite"))
-DEFAULT_KEYS_FILE = "gcp-oauth.keys.json"
-DEFAULT_CREDENTIALS_FILE = f"{DEFAULT_ROOT_DIR}/.gdrive-server-credentials.json"
+class CredentialsConfig(BaseModel):
+    """Credentials configuration settings."""
+    server_credentials: str = Field(
+        default=DEFAULT_SERVER_CREDS,
+        description="Path to the server credentials JSON file"
+    )
+    oauth_credentials: str = Field(
+        default=DEFAULT_OAUTH_CREDS,
+        description="Path to the OAuth credentials JSON file"
+    )
 
-class OAuthConfig(BaseModel):
-    """OAuth configuration settings."""
-    keys_file: str = Field(
-        default=DEFAULT_KEYS_FILE,
-        description="Path to the OAuth keys JSON file from Google Cloud Console"
-    )
-    credentials_file: str = Field(
-        default=DEFAULT_CREDENTIALS_FILE,
-        description="Path to save/load OAuth credentials"
-    )
+    def ensure_credentials_dir(self) -> None:
+        """Ensure the credentials directory exists."""
+        for cred_path in [self.server_credentials, self.oauth_credentials]:
+            os.makedirs(os.path.dirname(os.path.expanduser(cred_path)), exist_ok=True)
+
+    @property
+    def expanded_server_credentials(self) -> str:
+        """Get the expanded path for server credentials."""
+        return os.path.expanduser(self.server_credentials)
+
+    @property
+    def expanded_oauth_credentials(self) -> str:
+        """Get the expanded path for OAuth credentials."""
+        return os.path.expanduser(self.oauth_credentials)
 
 class Config(BaseModel):
     """Main configuration settings."""
-    oauth: OAuthConfig = Field(default_factory=OAuthConfig)
+    credentials: CredentialsConfig = Field(default_factory=CredentialsConfig)
 
     @classmethod
     def load(cls, config_path: Optional[str] = None) -> "Config":
@@ -39,4 +54,8 @@ class Config(BaseModel):
         """Save configuration to JSON file."""
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, 'w') as f:
-            json.dump(self.model_dump(), f, indent=2) 
+            json.dump(self.model_dump(), f, indent=2)
+
+    def ensure_credentials_dir(self) -> None:
+        """Ensure the credentials directory exists."""
+        self.credentials.ensure_credentials_dir() 

@@ -1,0 +1,6 @@
+{
+    "credentials": {
+        "server_credentials": "~/.google/server-creds.json",
+        "oauth_credentials": "~/.google/oauth.keys.json"
+    }
+} 
