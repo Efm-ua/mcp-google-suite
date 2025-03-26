@@ -55,6 +55,9 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
         fail_ci_if_error: true
+        slug: adexltd/mcp-google-suite
+        name: codecov-umbrella
+        verbose: true
     
     - name: Check formatting with black
       run: |
