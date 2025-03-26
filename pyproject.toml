@@ -22,7 +22,8 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Office/Business :: Office Suites",
-    "Framework :: MCP",
+    "Operating System :: OS Independent",
+    "Framework :: AsyncIO",
 ]
 dependencies = [
     "google-auth-oauthlib>=1.0.0",
