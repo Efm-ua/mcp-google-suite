@@ -30,15 +30,15 @@ import argparse
 import os
 from typing import List, Dict
 import asyncio
-from .server import GoogleWorkspaceMCPServer
+from mcp_google_suite.server import GoogleWorkspaceMCPServer
 import uvicorn
 from starlette.applications import Starlette
-from .web_app import create_web_app
+from mcp_google_suite.web_app import create_web_app
 import mcp.server.stdio
 from mcp.server.models import InitializationOptions
 from mcp.server import NotificationOptions
-from .config import Config
-from .auth.google_auth import GoogleAuth
+from mcp_google_suite.config import Config
+from mcp_google_suite.auth.google_auth import GoogleAuth
 
 def parse_env_vars(env_vars: List[str]) -> Dict[str, str]:
     """Parse environment variables from KEY=value format."""

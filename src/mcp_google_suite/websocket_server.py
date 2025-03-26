@@ -2,8 +2,8 @@ from starlette.routing import Route, WebSocketRoute
 from starlette.applications import Starlette
 import uvicorn
 from mcp.server.websocket import WebsocketServerTransport
-from .server import GoogleWorkspaceMCPServer
-from .config import Config
+from mcp_google_suite.server import GoogleWorkspaceMCPServer
+from mcp_google_suite.config import Config
 import logging
 
 logger = logging.getLogger(__name__)

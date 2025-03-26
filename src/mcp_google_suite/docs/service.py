@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional
-from ..base_service import BaseGoogleService
+from mcp_google_suite.base_service import BaseGoogleService
 from googleapiclient.errors import HttpError
 import asyncio
 

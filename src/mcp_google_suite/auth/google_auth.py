@@ -7,7 +7,7 @@ from google.auth.transport.requests import Request
 import os
 import json
 import asyncio
-from ..config import Config, OAuthConfig, DEFAULT_KEYS_FILE, DEFAULT_CREDENTIALS_FILE
+from mcp_google_suite.config import Config, OAuthConfig, DEFAULT_KEYS_FILE, DEFAULT_CREDENTIALS_FILE
 
 SCOPES = [
     'https://www.googleapis.com/auth/drive',

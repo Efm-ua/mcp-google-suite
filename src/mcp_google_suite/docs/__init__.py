@@ -1,5 +1,5 @@
 """Google Docs operations module."""
 
-from .service import DocsService
+from mcp_google_suite.docs.service import DocsService
 
 __all__ = ["DocsService"] 

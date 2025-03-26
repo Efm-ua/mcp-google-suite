@@ -1,5 +1,5 @@
 """Google OAuth authentication module."""
 
-from .google_auth import GoogleAuth
+from mcp_google_suite.auth.google_auth import GoogleAuth
 
 __all__ = ["GoogleAuth"] 

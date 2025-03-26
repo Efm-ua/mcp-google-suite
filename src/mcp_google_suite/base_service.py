@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional
 from googleapiclient.discovery import build
-from .auth.google_auth import GoogleAuth
+from mcp_google_suite.auth.google_auth import GoogleAuth
 import asyncio
 
 class BaseGoogleService:

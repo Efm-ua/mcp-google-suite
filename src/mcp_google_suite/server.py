@@ -6,11 +6,11 @@ from mcp.server.models import InitializationOptions
 import mcp.server.stdio
 import mcp.types as types
 from mcp.shared.exceptions import McpError
-from .drive.service import DriveService
-from .docs.service import DocsService
-from .sheets.service import SheetsService
-from .auth.google_auth import GoogleAuth
-from .config import Config
+from mcp_google_suite.drive.service import DriveService
+from mcp_google_suite.docs.service import DocsService
+from mcp_google_suite.sheets.service import SheetsService
+from mcp_google_suite.auth.google_auth import GoogleAuth
+from mcp_google_suite.config import Config
 import logging
 import sys
 import json

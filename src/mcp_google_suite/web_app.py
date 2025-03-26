@@ -4,7 +4,7 @@ from starlette.applications import Starlette
 from starlette.routing import Route, Mount, WebSocketRoute
 from mcp.server.sse import SseServerTransport
 from mcp.server.websocket import websocket_server
-from .server import GoogleWorkspaceMCPServer
+from mcp_google_suite.server import GoogleWorkspaceMCPServer
 
 def create_web_app(server: GoogleWorkspaceMCPServer) -> Starlette:
     """Create a Starlette application with both SSE and WebSocket support."""
