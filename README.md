@@ -1,88 +1,54 @@
 # MCP Google Workspace Server
 
-A Model Context Protocol (MCP) server that provides tools for interacting with Google Workspace (Drive, Docs, and Sheets).
+[![CI](https://github.com/adexltd/mcp-google-suite/actions/workflows/ci.yml/badge.svg)](https://github.com/adexltd/mcp-google-suite/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/adexltd/mcp-google-suite/branch/main/graph/badge.svg)](https://codecov.io/gh/adexltd/mcp-google-suite)
+[![PyPI version](https://badge.fury.io/py/mcp-google-suite.svg)](https://badge.fury.io/py/mcp-google-suite)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-## Features
+A Model Context Protocol (MCP) server enabling AI agents to interact with Google Workspace (Drive, Docs, and Sheets) services.
 
-- Google Drive operations (search, create folders)
-- Google Docs operations (create, read, update)
-- Google Sheets operations (create, read, update)
-- Support for stdio, SSE, and WebSocket transport modes
-- Compatible with MCP Inspector for testing and debugging
-- Integration with MCP-compatible clients like Cursor
+## 🌟 Features
 
-## Prerequisites
+- Google Drive: Search files, create folders
+- Google Docs: Create, read, update documents
+- Google Sheets: Create spreadsheets, read/write cell values
+- Multiple transport modes: stdio (default), SSE, WebSocket
+- MCP-compatible client support (Cursor, etc.)
 
-- Python 3.11 or higher
-- Google Cloud Project with Google Workspace APIs enabled
-- OAuth 2.0 credentials for Google Workspace
-- Node.js and npm (for MCP Inspector)
-- `uv` package manager (recommended)
+## 📋 Installation
 
-## Installation
-
-1. Clone the repository:
+### Using uv (recommended)
 ```bash
-git clone <repository-url>
-cd mcp-google-suite
+uvx mcp-google-suite
 ```
 
-2. Install dependencies using `uv`:
+### Using pip
 ```bash
-uv venv
-source .venv/bin/activate  # On Unix/macOS
-.venv\Scripts\activate     # On Windows
+pip install mcp-google-suite
+```
+
+### Development setup
+```bash
+# Clone and install
+git clone git@github.com:adexltd/mcp-google-suite.git && cd mcp-google-suite
+uv venv && source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 uv pip install -e .
 ```
 
-3. Set up Google OAuth credentials:
-   - Go to the [Google Cloud Console](https://console.cloud.google.com)
-   - Create a new project or select an existing one
-   - Enable the Google Drive, Google Docs, and Google Sheets APIs
-   - Configure OAuth consent screen
-   - Create OAuth 2.0 credentials (Desktop application)
-   - Download the credentials and save them as `oauth.keys.json` in `~/.google/` directory
+## 🔧 Configuration
 
-## Usage
+### Configure for MCP Clients
 
-### Authentication
+Add to your client settings (e.g. Cursor, Claude):
 
-Before using the server, you need to authenticate with Google:
-
-```bash
-mcp-google auth
-```
-
-This will:
-1. Look for OAuth credentials in `~/.google/oauth.keys.json`
-2. Open a browser window for Google authentication
-3. Save the server credentials to `~/.google/server-creds.json`
-
-### Direct Server Execution
-
-1. Start the server in stdio mode (default):
-```bash
-mcp-google
-# or
-mcp-google run
-```
-
-2. Start the server in WebSocket mode:
-```bash
-mcp-google run --mode ws
-```
-
-### Using with MCP-Compatible Clients
-
-The server can be integrated with MCP-compatible clients like Cursor. Here's how to set it up:
-
-1. Create an MCP configuration file (e.g., `mcp-config.json`):
+Using uvx (recommended):
 ```json
 {
   "mcpServers": {
     "mcp-google-suite": {
-      "command": "uv",
-      "args": ["--directory", "WORKSPACE_DIR", "run", "mcp-google"],
+      "command": "uvx",
+      "args": ["mcp-google"],
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "~/.google/server-creds.json",
         "GOOGLE_OAUTH_CREDENTIALS": "~/.google/oauth.keys.json"
@@ -92,151 +58,105 @@ The server can be integrated with MCP-compatible clients like Cursor. Here's how
 }
 ```
 
-2. Configure your client to use this configuration file.
-
-3. The server will automatically:
-   - Use the specified credential paths
-   - Handle authentication when needed
-   - Provide Google Workspace tools to your client
-
-Note: Always use `uv` for managing the Python environment and running the server to ensure consistent behavior.
-
-### Using MCP Inspector
-
-The MCP Inspector provides a graphical interface for testing and debugging your MCP server.
-
-1. Install the MCP Inspector:
-```bash
-npm install -g @modelcontextprotocol/inspector
+Using pip installation:
+```json
+{
+  "mcpServers": {
+    "mcp-google-suite": {
+      "command": "python",
+      "args": ["-m", "mcp_google_suite"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "~/.google/server-creds.json",
+        "GOOGLE_OAUTH_CREDENTIALS": "~/.google/oauth.keys.json"
+      }
+    }
+  }
+}
 ```
 
-2. Run the server with the inspector:
-```bash
-npx @modelcontextprotocol/inspector uv run mcp-google
-```
-
-The inspector will:
-- Start your server in stdio mode
-- Provide a web interface for testing available tools
-- Show request/response data
-- Allow interactive testing of all server capabilities
+### Google OAuth Setup
+1. Visit [Google Cloud Console](https://console.cloud.google.com)
+2. Enable Drive, Docs, and Sheets APIs
+3. Create OAuth 2.0 credentials
+4. Save as `~/.google/oauth.keys.json`
+5. Run `mcp-google auth` to authenticate
 
 ### Available Tools
 
-#### Drive Tools
-- `drive_search_files`: Search for files in Google Drive
-- `drive_create_folder`: Create a new folder in Google Drive
+#### Drive Operations
+- `drive_search_files`: Search files in Google Drive
+  - `query` (string, required): Search query
+  - `page_size` (integer, optional): Number of results to return
+- `drive_create_folder`: Create a new folder
+  - `name` (string, required): Folder name
+  - `parent_id` (string, optional): Parent folder ID
 
-#### Docs Tools
-- `docs_create`: Create a new Google Doc
-- `docs_get_content`: Get the contents of a Google Doc
-- `docs_update_content`: Update the content of a Google Doc
+#### Docs Operations
+- `docs_create`: Create a new document
+  - `title` (string, required): Document title
+  - `content` (string, optional): Initial content
+- `docs_get_content`: Get document content
+  - `document_id` (string, required): Document ID
+- `docs_update_content`: Update document content
+  - `document_id` (string, required): Document ID
+  - `content` (string, required): New content
 
-#### Sheets Tools
-- `sheets_create`: Create a new Google Sheet
-- `sheets_get_values`: Get values from a Google Sheet range
-- `sheets_update_values`: Update values in a Google Sheet range
+#### Sheets Operations
+- `sheets_create`: Create a new spreadsheet
+  - `title` (string, required): Spreadsheet title
+  - `sheets` (array, optional): Sheet names
+- `sheets_get_values`: Get cell values
+  - `spreadsheet_id` (string, required): Spreadsheet ID
+  - `range` (string, required): A1 notation range
+- `sheets_update_values`: Update cell values
+  - `spreadsheet_id` (string, required): Spreadsheet ID
+  - `range` (string, required): A1 notation range
+  - `values` (array, required): 2D array of values
 
-## Example Tool Calls
+## 🛠️ Development
 
-```python
-# Example: Create a new Google Doc
-{
-    "tool": "docs_create",
-    "parameters": {
-        "title": "My Document",
-        "content": "Hello, World!"
-    }
-}
+```bash
+# Install dev dependencies
+uv pip install -e ".[dev]"
 
-# Example: Search files in Drive
-{
-    "tool": "drive_search_files",
-    "parameters": {
-        "query": "name contains 'report'",
-        "page_size": 10
-    }
-}
+# Setup pre-commit hooks
+pre-commit install
+
+# Run tests
+pytest
+
+# Format code
+black . && ruff check --fix .
 ```
 
-## Credential Management
+## 🔍 Debugging
 
-The server uses two types of credentials and follows a specific precedence order for finding them:
+Use the MCP Inspector for interactive testing:
 
-1. OAuth Credentials:
-   - Primary location: `GOOGLE_OAUTH_CREDENTIALS` environment variable
-   - Fallback: `~/.google/oauth.keys.json` (default)
-   - Contains client ID and client secret
-   - Required for initial setup
-
-2. Server Credentials:
-   - Primary location: `GOOGLE_APPLICATION_CREDENTIALS` environment variable
-   - Fallback: `~/.google/server-creds.json` (default)
-   - Generated during authentication
-   - Contains access and refresh tokens
-   - Created automatically when running `mcp-google auth`
-
-### Credential Precedence
-
-The server looks for credentials in the following order:
-
-1. Environment Variables:
-   ```bash
-   export GOOGLE_APPLICATION_CREDENTIALS="/path/to/server-creds.json"
-   export GOOGLE_OAUTH_CREDENTIALS="/path/to/oauth.keys.json"
-   ```
-
-2. Configuration File:
-   Create a `config.json` in the project root:
-   ```json
-   {
-       "credentials": {
-           "server_credentials": "~/.google/server-creds.json",
-           "oauth_credentials": "~/.google/oauth.keys.json"
-       }
-   }
-   ```
-
-3. Default Locations:
-   - Server credentials: `~/.google/server-creds.json`
-   - OAuth credentials: `~/.google/oauth.keys.json`
-
-Note: Environment variables take precedence over both the config.json and default locations. This is particularly useful when:
-- Running in different environments (development, production)
-- Using CI/CD pipelines
-- Integrating with MCP-compatible clients like Cursor
-
-## Development and Testing
-
-### Using MCP Inspector for Development
-
-The MCP Inspector is a valuable tool for development and testing:
-
-1. It provides real-time feedback on:
-   - Tool registration and availability
-   - Request/response format
-   - Error handling
-   - Authentication status
-
-2. Interactive testing features:
-   - Test tools with custom parameters
-   - View detailed request/response logs
-   - Validate tool schemas
-   - Debug authentication issues
-
-To start development with the inspector:
 ```bash
+# Using uvx
+npx @modelcontextprotocol/inspector uvx mcp-google
+
+# For development
+cd path/to/mcp-google-suite
 npx @modelcontextprotocol/inspector uv run mcp-google
 ```
 
-## Security Considerations
+## 📚 Resources
 
-- Keep your credential files secure
-- Use appropriate scopes in the OAuth consent screen
-- Follow the principle of least privilege when requesting access
-- Never commit credential files to version control
-- Always use `uv` for managing the Python environment
+- [Documentation](https://github.com/adexltd/mcp-google-suite/wiki)
+- [MCP Inspector](https://github.com/modelcontextprotocol/inspector)
+- [Pre-commit Hooks](https://pre-commit.com)
+- [Google Cloud Console](https://console.cloud.google.com)
 
-## Contributing
+## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. 
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+## 🔒 Security
+
+See [SECURITY.md](SECURITY.md) for reporting vulnerabilities and best practices.
+
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE) file for details.

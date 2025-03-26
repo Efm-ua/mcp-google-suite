@@ -2,4 +2,4 @@
 
 from mcp_google_suite.docs.service import DocsService
 
-__all__ = ["DocsService"] 
+__all__ = ["DocsService"]

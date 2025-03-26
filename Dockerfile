@@ -32,4 +32,4 @@ EXPOSE 8000
 ENV SERVER_MODE=stdio
 
 # Run the server using uv run
-ENTRYPOINT ["uv", "run", "mcp-google-run"] 
+ENTRYPOINT ["uv", "run", "mcp-google-run"]

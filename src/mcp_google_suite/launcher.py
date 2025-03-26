@@ -27,30 +27,33 @@ Note:
 """
 
 import argparse
-import os
-from typing import List, Dict
 import asyncio
-from mcp_google_suite.server import GoogleWorkspaceMCPServer
-import uvicorn
-from starlette.applications import Starlette
-from mcp_google_suite.web_app import create_web_app
+import os
+from typing import Dict, List
+
 import mcp.server.stdio
-from mcp.server.models import InitializationOptions
+import uvicorn
 from mcp.server import NotificationOptions
-from mcp_google_suite.config import Config
+from mcp.server.models import InitializationOptions
+
 from mcp_google_suite.auth.google_auth import GoogleAuth
+from mcp_google_suite.config import Config
+from mcp_google_suite.server import GoogleWorkspaceMCPServer
+from mcp_google_suite.web_app import create_web_app
+
 
 def parse_env_vars(env_vars: List[str]) -> Dict[str, str]:
     """Parse environment variables from KEY=value format."""
     result = {}
     for env_var in env_vars:
         try:
-            key, value = env_var.split('=', 1)
+            key, value = env_var.split("=", 1)
             # Handle shell variable expansion
             result[key] = os.path.expandvars(value)
         except ValueError:
             print(f"Warning: Skipping invalid environment variable format: {env_var}")
     return result
+
 
 def create_init_options(server: GoogleWorkspaceMCPServer) -> InitializationOptions:
     """Create initialization options for the server."""
@@ -63,6 +66,7 @@ def create_init_options(server: GoogleWorkspaceMCPServer) -> InitializationOptio
         ),
     )
 
+
 async def run_stdio_server(server: GoogleWorkspaceMCPServer):
     """Run the server in stdio mode."""
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
@@ -72,11 +76,13 @@ async def run_stdio_server(server: GoogleWorkspaceMCPServer):
             create_init_options(server),
         )
 
+
 def authenticate(config_path: str = None):
     """Run the authentication flow."""
     config = Config.load(config_path)
     auth = GoogleAuth(config)
     auth.authenticate()
+
 
 def main():
     """Main entry point."""
@@ -86,29 +92,21 @@ def main():
         nargs="?",  # Make command optional
         choices=["run", "auth"],
         default="run",  # Default to "run" if not provided
-        help="Command to execute (run: start server, auth: authenticate)"
+        help="Command to execute (run: start server, auth: authenticate)",
     )
     parser.add_argument(
-        "--mode", 
-        choices=["stdio", "sse", "ws"], 
+        "--mode",
+        choices=["stdio", "sse", "ws"],
         default="stdio",
-        help="Server transport mode (default: stdio)"
+        help="Server transport mode (default: stdio)",
     )
     parser.add_argument(
-        "--host",
-        default="0.0.0.0",
-        help="Host for HTTP/WebSocket server (default: 0.0.0.0)"
+        "--host", default="0.0.0.0", help="Host for HTTP/WebSocket server (default: 0.0.0.0)"
     )
     parser.add_argument(
-        "--port",
-        type=int,
-        default=8000,
-        help="Port for HTTP/WebSocket server (default: 8000)"
+        "--port", type=int, default=8000, help="Port for HTTP/WebSocket server (default: 8000)"
     )
-    parser.add_argument(
-        "--config",
-        help="Path to configuration file"
-    )
+    parser.add_argument("--config", help="Path to configuration file")
 
     args = parser.parse_args()
 
@@ -120,25 +118,28 @@ def main():
     server = GoogleWorkspaceMCPServer(config_path=args.config)
 
     # Override mode from environment if not specified in args
-    mode = args.mode or os.environ.get('SERVER_MODE', 'stdio')
+    mode = args.mode or os.environ.get("SERVER_MODE", "stdio")
 
-    if mode == 'stdio':
+    if mode == "stdio":
         # Run in STDIO mode using MCP's transport
         asyncio.run(run_stdio_server(server))
     else:
         # Create web app for SSE/WS modes
         app = create_web_app(server)
-        host = args.host or os.environ.get('HOST', '0.0.0.0')
-        port = args.port or int(os.environ.get('PORT', '8000'))
+        host = args.host or os.environ.get("HOST", "0.0.0.0")
+        port = args.port or int(os.environ.get("PORT", "8000"))
         uvicorn.run(app, host=host, port=port)
+
 
 def run_server():
     """Backward compatibility wrapper around main()."""
     import sys
+
     # If no arguments provided, default to 'run'
     if len(sys.argv) == 1:
-        sys.argv.append('run')
+        sys.argv.append("run")
     main()
 
-if __name__ == '__main__':
-    main() 
+
+if __name__ == "__main__":
+    main()

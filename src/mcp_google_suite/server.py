@@ -1,23 +1,27 @@
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Any, AsyncIterator, Callable, Awaitable
+import json
+import logging
+import os
+import sys
 from contextlib import asynccontextmanager
-from mcp.server import Server, NotificationOptions
-from mcp.server.models import InitializationOptions
-import mcp.server.stdio
+from dataclasses import dataclass
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, AsyncIterator, Awaitable, Callable, Dict, List, Optional
+
 import mcp.types as types
+from mcp.server import Server
+from mcp.server.models import InitializationOptions
 from mcp.shared.exceptions import McpError
-from mcp_google_suite.drive.service import DriveService
-from mcp_google_suite.docs.service import DocsService
-from mcp_google_suite.sheets.service import SheetsService
+from tabulate import tabulate
+
 from mcp_google_suite.auth.google_auth import GoogleAuth
 from mcp_google_suite.config import Config
-import logging
-import sys
-import json
-from functools import wraps
-import os
-from datetime import datetime
-from tabulate import tabulate
+from mcp_google_suite.docs.service import DocsService
+from mcp_google_suite.drive.service import DriveService
+from mcp_google_suite.sheets.service import SheetsService
+
+if TYPE_CHECKING:
+    pass  # Remove unused ServerContext import
+
 
 # Configure logging
 def setup_logging():
@@ -33,11 +37,9 @@ def setup_logging():
 
     # Define formatters
     detailed_formatter = logging.Formatter(
-        '%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d | %(message)s'
+        "%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d | %(message)s"
     )
-    console_formatter = logging.Formatter(
-        '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-    )
+    console_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
     # File handler - DEBUG level with detailed formatting
     file_handler = logging.FileHandler(log_file)
@@ -57,18 +59,23 @@ def setup_logging():
 
     return root_logger
 
+
 # Initialize logging
 logger = setup_logging()
+
 
 @dataclass
 class GoogleWorkspaceContext:
     """Context for Google Workspace services."""
+
     auth: GoogleAuth
     drive: DriveService
     docs: DocsService
     sheets: SheetsService
 
+
 ToolHandler = Callable[[GoogleWorkspaceContext, dict], Awaitable[Any]]
+
 
 class GoogleWorkspaceMCPServer:
     """MCP server for Google Workspace operations."""
@@ -79,24 +86,24 @@ class GoogleWorkspaceMCPServer:
         try:
             self.config = config or Config.load(config_path)
             logger.debug("Config loaded successfully")
-            
+
             # Create server instance
             logger.debug("Creating Server instance")
             self._context = None  # Store context for access in tools
             self.server = Server("mcp-google-suite")
-            
+
             # Initialize tool registry
             self._tool_registry: Dict[str, ToolHandler] = {}
-            
+
             logger.debug("Server instance created")
-            
+
             # Register tools
             logger.debug("Starting tool registration")
             self.register_tools()
-            
+
             # Display available tools
             self._display_available_tools()
-            
+
             logger.info("Server initialization complete")
         except Exception as e:
             logger.error(f"Error during initialization: {str(e)}", exc_info=True)
@@ -106,27 +113,29 @@ class GoogleWorkspaceMCPServer:
         """Display available tools in a structured format."""
         try:
             logger.info("Available Tools Summary:")
-            
+
             # Prepare tool information for display
             tool_info = []
-            for name, handler in self._tool_registry.items():
+            for name, _handler in self._tool_registry.items():
                 tool_schema = next((t for t in self._get_tools_list() if t.name == name), None)
                 if tool_schema:
-                    required_params = tool_schema.inputSchema.get('required', [])
-                    all_params = list(tool_schema.inputSchema.get('properties', {}).keys())
+                    required_params = tool_schema.inputSchema.get("required", [])
+                    all_params = list(tool_schema.inputSchema.get("properties", {}).keys())
                     optional_params = [p for p in all_params if p not in required_params]
-                    
-                    tool_info.append([
-                        name,
-                        tool_schema.description,
-                        ", ".join(required_params) or "None",
-                        ", ".join(optional_params) or "None"
-                    ])
+
+                    tool_info.append(
+                        [
+                            name,
+                            tool_schema.description,
+                            ", ".join(required_params) or "None",
+                            ", ".join(optional_params) or "None",
+                        ]
+                    )
 
             # Create a formatted table
             headers = ["Tool Name", "Description", "Required Parameters", "Optional Parameters"]
             table = tabulate(tool_info, headers=headers, tablefmt="grid")
-            
+
             # Print the table with a border
             border_line = "=" * len(table.split("\n")[0])
             logger.info("\n" + border_line)
@@ -134,12 +143,16 @@ class GoogleWorkspaceMCPServer:
             logger.info(border_line)
             logger.info("\n" + table)
             logger.info(border_line + "\n")
-            
+
             # Log summary statistics
             logger.info(f"Total tools available: {len(tool_info)}")
-            logger.info(f"Tools with required parameters: {sum(1 for t in tool_info if t[2] != 'None')}")
-            logger.info(f"Tools with optional parameters: {sum(1 for t in tool_info if t[3] != 'None')}")
-            
+            logger.info(
+                f"Tools with required parameters: {sum(1 for t in tool_info if t[2] != 'None')}"
+            )
+            logger.info(
+                f"Tools with optional parameters: {sum(1 for t in tool_info if t[3] != 'None')}"
+            )
+
         except Exception as e:
             logger.error(f"Error displaying tools: {str(e)}", exc_info=True)
 
@@ -153,10 +166,14 @@ class GoogleWorkspaceMCPServer:
                     "type": "object",
                     "properties": {
                         "query": {"type": "string", "description": "Search query"},
-                        "page_size": {"type": "integer", "description": "Number of results to return", "default": 10}
+                        "page_size": {
+                            "type": "integer",
+                            "description": "Number of results to return",
+                            "default": 10,
+                        },
                     },
-                    "required": ["query"]
-                }
+                    "required": ["query"],
+                },
             ),
             types.Tool(
                 name="drive_create_folder",
@@ -165,10 +182,10 @@ class GoogleWorkspaceMCPServer:
                     "type": "object",
                     "properties": {
                         "name": {"type": "string", "description": "Name of the folder"},
-                        "parent_id": {"type": "string", "description": "ID of parent folder"}
+                        "parent_id": {"type": "string", "description": "ID of parent folder"},
                     },
-                    "required": ["name"]
-                }
+                    "required": ["name"],
+                },
             ),
             types.Tool(
                 name="docs_create",
@@ -177,10 +194,10 @@ class GoogleWorkspaceMCPServer:
                     "type": "object",
                     "properties": {
                         "title": {"type": "string", "description": "Title of the document"},
-                        "content": {"type": "string", "description": "Initial content"}
+                        "content": {"type": "string", "description": "Initial content"},
                     },
-                    "required": ["title"]
-                }
+                    "required": ["title"],
+                },
             ),
             types.Tool(
                 name="docs_get_content",
@@ -190,8 +207,8 @@ class GoogleWorkspaceMCPServer:
                     "properties": {
                         "document_id": {"type": "string", "description": "ID of the document"}
                     },
-                    "required": ["document_id"]
-                }
+                    "required": ["document_id"],
+                },
             ),
             types.Tool(
                 name="docs_update_content",
@@ -200,10 +217,10 @@ class GoogleWorkspaceMCPServer:
                     "type": "object",
                     "properties": {
                         "document_id": {"type": "string", "description": "ID of the document"},
-                        "content": {"type": "string", "description": "New content"}
+                        "content": {"type": "string", "description": "New content"},
                     },
-                    "required": ["document_id", "content"]
-                }
+                    "required": ["document_id", "content"],
+                },
             ),
             types.Tool(
                 name="sheets_create",
@@ -212,10 +229,14 @@ class GoogleWorkspaceMCPServer:
                     "type": "object",
                     "properties": {
                         "title": {"type": "string", "description": "Title of the spreadsheet"},
-                        "sheets": {"type": "array", "items": {"type": "string"}, "description": "Sheet names"}
+                        "sheets": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Sheet names",
+                        },
                     },
-                    "required": ["title"]
-                }
+                    "required": ["title"],
+                },
             ),
             types.Tool(
                 name="sheets_get_values",
@@ -223,11 +244,14 @@ class GoogleWorkspaceMCPServer:
                 inputSchema={
                     "type": "object",
                     "properties": {
-                        "spreadsheet_id": {"type": "string", "description": "ID of the spreadsheet"},
-                        "range": {"type": "string", "description": "A1 notation range"}
+                        "spreadsheet_id": {
+                            "type": "string",
+                            "description": "ID of the spreadsheet",
+                        },
+                        "range": {"type": "string", "description": "A1 notation range"},
                     },
-                    "required": ["spreadsheet_id", "range"]
-                }
+                    "required": ["spreadsheet_id", "range"],
+                },
             ),
             types.Tool(
                 name="sheets_update_values",
@@ -235,95 +259,173 @@ class GoogleWorkspaceMCPServer:
                 inputSchema={
                     "type": "object",
                     "properties": {
-                        "spreadsheet_id": {"type": "string", "description": "ID of the spreadsheet"},
+                        "spreadsheet_id": {
+                            "type": "string",
+                            "description": "ID of the spreadsheet",
+                        },
                         "range": {"type": "string", "description": "A1 notation range"},
-                        "values": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}, "description": "2D array of values"}
+                        "values": {
+                            "type": "array",
+                            "items": {"type": "array", "items": {"type": "string"}},
+                            "description": "2D array of values",
+                        },
                     },
-                    "required": ["spreadsheet_id", "range", "values"]
-                }
-            )
+                    "required": ["spreadsheet_id", "range", "values"],
+                },
+            ),
         ]
 
     def register_tool_handler(self, name: str) -> Callable[[ToolHandler], ToolHandler]:
         """Decorator to register tool handlers."""
+
         def decorator(handler: ToolHandler) -> ToolHandler:
             logger.debug(f"Registering tool handler for {name}")
             self._tool_registry[name] = handler
             return handler
+
         return decorator
 
-    async def _drive_search_files(self, context: GoogleWorkspaceContext, arguments: dict) -> Dict[str, Any]:
+    async def _handle_drive_search_files(
+        self, context: GoogleWorkspaceContext, arguments: dict
+    ) -> Dict[str, Any]:
         """Handle drive search files requests."""
-        logger.debug(f"Drive search request - Query: {arguments['query']}, Page Size: {arguments.get('page_size', 10)}")
-        result = await context.drive.search_files(arguments["query"], arguments.get("page_size", 10))
+        query = arguments.get("query")
+        page_size = arguments.get("page_size", 10)
+
+        if not query:
+            raise ValueError("Search query is required")
+
+        logger.debug(f"Drive search request - Query: {query}, Page Size: {page_size}")
+        result = await context.drive.search_files(query=query, page_size=page_size)
         logger.debug(f"Drive search completed - Found {len(result.get('files', []))} files")
         return result
 
-    async def _drive_create_folder(self, context: GoogleWorkspaceContext, arguments: dict) -> Dict[str, Any]:
+    async def _handle_drive_create_folder(
+        self, context: GoogleWorkspaceContext, arguments: dict
+    ) -> Dict[str, Any]:
         """Handle drive create folder requests."""
-        logger.debug(f"Creating folder - Name: {arguments['name']}, Parent: {arguments.get('parent_id', 'root')}")
-        result = await context.drive.create_folder(arguments["name"], arguments.get("parent_id"))
+        name = arguments.get("name")
+        parent_id = arguments.get("parent_id")
+
+        if not name:
+            raise ValueError("Folder name is required")
+
+        logger.debug(f"Creating folder - Name: {name}, Parent: {parent_id or 'root'}")
+        result = await context.drive.create_folder(name=name, parent_id=parent_id)
         logger.debug(f"Folder created - ID: {result.get('id')}")
         return result
 
-    async def _docs_create(self, context: GoogleWorkspaceContext, arguments: dict) -> Dict[str, Any]:
+    async def _handle_docs_create(
+        self, context: GoogleWorkspaceContext, arguments: dict
+    ) -> Dict[str, Any]:
         """Handle docs create requests."""
-        logger.debug(f"Creating document - Title: {arguments['title']}, Content length: {len(arguments.get('content', ''))}")
-        result = await context.docs.create_document(arguments["title"], arguments.get("content"))
+        title = arguments.get("title")
+        content = arguments.get("content")
+
+        if not title:
+            raise ValueError("Document title is required")
+
+        logger.debug(
+            f"Creating document - Title: {title}, " f"Content length: {len(content or '')}"
+        )
+        result = await context.docs.create_document(title=title, content=content)
         logger.debug(f"Document created - ID: {result.get('documentId')}")
         return result
 
-    async def _docs_get_content(self, context: GoogleWorkspaceContext, arguments: dict) -> Dict[str, Any]:
+    async def _handle_docs_get_content(
+        self, context: GoogleWorkspaceContext, arguments: dict
+    ) -> Dict[str, Any]:
         """Handle docs get content requests."""
-        logger.debug(f"Getting document content - ID: {arguments['document_id']}")
-        result = await context.docs.get_document(arguments["document_id"])
+        document_id = arguments.get("document_id")
+
+        if not document_id:
+            raise ValueError("Document ID is required")
+
+        logger.debug(f"Getting document content - ID: {document_id}")
+        result = await context.docs.get_document_content(document_id=document_id)
         logger.debug("Document content retrieved successfully")
         return result
 
-    async def _docs_update_content(self, context: GoogleWorkspaceContext, arguments: dict) -> Dict[str, Any]:
+    async def _handle_docs_update_content(
+        self, context: GoogleWorkspaceContext, arguments: dict
+    ) -> Dict[str, Any]:
         """Handle docs update content requests."""
-        logger.debug(f"Updating document - ID: {arguments['document_id']}, Content length: {len(arguments['content'])}")
-        result = await context.docs.update_document_content(arguments["document_id"], arguments["content"])
+        document_id = arguments.get("document_id")
+        content = arguments.get("content")
+
+        if not document_id or content is None:
+            raise ValueError("Both document_id and content are required")
+
+        logger.debug(f"Updating document - ID: {document_id}, " f"Content length: {len(content)}")
+        result = await context.docs.update_document_content(
+            document_id=document_id, content=content
+        )
         logger.debug("Document content updated successfully")
         return result
 
-    async def _sheets_create(self, context: GoogleWorkspaceContext, arguments: dict) -> Dict[str, Any]:
+    async def _handle_sheets_create(
+        self, context: GoogleWorkspaceContext, arguments: dict
+    ) -> Dict[str, Any]:
         """Handle sheets create requests."""
-        logger.debug(f"Creating spreadsheet - Title: {arguments['title']}, Sheets: {arguments.get('sheets', [])}")
-        result = await context.sheets.create_spreadsheet(arguments["title"], arguments.get("sheets"))
+        title = arguments.get("title")
+        sheets = arguments.get("sheets", [])
+
+        if not title:
+            raise ValueError("Spreadsheet title is required")
+
+        logger.debug(f"Creating spreadsheet - Title: {title}, Sheets: {sheets}")
+        result = await context.sheets.create_spreadsheet(title=title, sheets=sheets)
         logger.debug(f"Spreadsheet created - ID: {result.get('spreadsheetId')}")
         return result
 
-    async def _sheets_get_values(self, context: GoogleWorkspaceContext, arguments: dict) -> Dict[str, Any]:
+    async def _handle_sheets_get_values(
+        self, context: GoogleWorkspaceContext, arguments: dict
+    ) -> Dict[str, Any]:
         """Handle sheets get values requests."""
-        logger.debug(f"Getting sheet values - ID: {arguments['spreadsheet_id']}, Range: {arguments['range']}")
-        result = await context.sheets.get_values(arguments["spreadsheet_id"], arguments["range"])
+        spreadsheet_id = arguments.get("spreadsheet_id")
+        range_name = arguments.get("range")
+
+        if not spreadsheet_id or not range_name:
+            raise ValueError("Both spreadsheet_id and range are required")
+
+        logger.debug(f"Getting sheet values - ID: {spreadsheet_id}, Range: {range_name}")
+        result = await context.sheets.get_values(
+            spreadsheet_id=spreadsheet_id, range_name=range_name
+        )
         logger.debug(f"Sheet values retrieved - Row count: {len(result.get('values', []))}")
         return result
 
-    async def _sheets_update_values(self, context: GoogleWorkspaceContext, arguments: dict) -> Dict[str, Any]:
+    async def _handle_sheets_update_values(
+        self, context: GoogleWorkspaceContext, arguments: dict
+    ) -> Dict[str, Any]:
         """Handle sheets update values requests."""
-        logger.debug(f"Updating sheet values - ID: {arguments['spreadsheet_id']}, Range: {arguments['range']}")
-        result = await context.sheets.update_values(arguments["spreadsheet_id"], arguments["range"], arguments["values"])
+        spreadsheet_id = arguments.get("spreadsheet_id")
+        range_name = arguments.get("range")
+        values = arguments.get("values")
+
+        if not spreadsheet_id or not range_name or values is None:
+            raise ValueError("spreadsheet_id, range, and values are required")
+
+        logger.debug(f"Updating sheet values - ID: {spreadsheet_id}, " f"Range: {range_name}")
+        result = await context.sheets.update_values(
+            spreadsheet_id=spreadsheet_id, range_name=range_name, values=values
+        )
         logger.debug(f"Sheet values updated - Updated cells: {result.get('updatedCells', 0)}")
         return result
 
     def register_tools(self):
         """Register all available tools."""
-        logger.debug("Starting tool registration")
         try:
-            # Register tool handlers
-            self._tool_registry = {
-                "drive_search_files": self._drive_search_files,
-                "drive_create_folder": self._drive_create_folder,
-                "docs_create": self._docs_create,
-                "docs_get_content": self._docs_get_content,
-                "docs_update_content": self._docs_update_content,
-                "sheets_create": self._sheets_create,
-                "sheets_get_values": self._sheets_get_values,
-                "sheets_update_values": self._sheets_update_values,
-            }
+            logger.debug("Registering tools")
 
+            # Register tool handlers
+            for tool in self._get_tools_list():
+                handler_name = f"_handle_{tool.name}"
+                if hasattr(self, handler_name):
+                    self._tool_registry[tool.name] = getattr(self, handler_name)
+                    logger.debug(f"Registered handler for {tool.name}")
+
+            # Register server handlers
             @self.server.list_tools()
             async def handle_list_tools() -> list[types.Tool]:
                 """List available tools."""
@@ -333,7 +435,9 @@ class GoogleWorkspaceMCPServer:
                 return tools
 
             @self.server.call_tool()
-            async def handle_call_tool(name: str, arguments: dict | None) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
+            async def handle_call_tool(
+                name: str, arguments: dict | None
+            ) -> list[types.TextContent | types.ImageContent | types.EmbeddedResource]:
                 """Handle tool execution requests."""
                 request_id = f"{name}_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
                 logger.info(f"Tool execution started - Request ID: {request_id}")
@@ -361,17 +465,18 @@ class GoogleWorkspaceMCPServer:
                     logger.debug(f"[{request_id}] Executing tool with context")
                     result = await handler(self._context, arguments)
                     logger.info(f"[{request_id}] Tool execution completed successfully")
-                    
+
                     # Log response summary
                     response = types.TextContent(type="text", text=json.dumps(result, indent=2))
                     logger.debug(f"[{request_id}] Response size: {len(response.text)} characters")
-                    
+
                     return [response]
 
                 except Exception as e:
                     logger.error(f"[{request_id}] Error executing tool: {str(e)}", exc_info=True)
                     raise
 
+            logger.debug("Tool registration complete")
         except Exception as e:
             logger.error(f"Error registering tools: {str(e)}", exc_info=True)
             raise
@@ -385,28 +490,23 @@ class GoogleWorkspaceMCPServer:
             logger.debug("Initializing Google services")
             auth = GoogleAuth(config=self.config)
             logger.debug("Auth service initialized")
-            
+
             drive = DriveService(auth)
             logger.debug("Drive service initialized")
-            
+
             docs = DocsService(auth)
             logger.debug("Docs service initialized")
-            
+
             sheets = SheetsService(auth)
             logger.debug("Sheets service initialized")
-            
+
             # Create context
-            context = GoogleWorkspaceContext(
-                auth=auth,
-                drive=drive,
-                docs=docs,
-                sheets=sheets
-            )
-            
+            context = GoogleWorkspaceContext(auth=auth, drive=drive, docs=docs, sheets=sheets)
+
             # Store context for access in tools
             self._context = context
             logger.debug("Context created and stored")
-            
+
             try:
                 # Yield context
                 logger.debug("Yielding context")
@@ -433,4 +533,19 @@ class GoogleWorkspaceMCPServer:
                 logger.info("Server run completed")
         except Exception as e:
             logger.error(f"Server error: {e}", exc_info=True)
-            raise 
+            raise
+
+    def list_tools_table(self) -> str:
+        """List available tools in a table format."""
+        try:
+            # Prepare tool information for display
+            tool_info = []
+            for name, _handler in self._tool_registry.items():
+                tool_schema = next((t for t in self._get_tools_list() if t.name == name), None)
+                if tool_schema:
+                    tool_info.append([name, tool_schema.description])
+
+            return tabulate(tool_info, headers=["Tool", "Description"], tablefmt="grid")
+        except Exception as e:
+            logger.error(f"Error listing tools: {e}")
+            return "Error listing tools"

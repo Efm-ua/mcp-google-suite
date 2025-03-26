@@ -2,4 +2,4 @@
 
 from mcp_google_suite.sheets.service import SheetsService
 
-__all__ = ["SheetsService"] 
+__all__ = ["SheetsService"]

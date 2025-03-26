@@ -5,9 +5,9 @@ Important Rules
 - Use latest packages from python
 - MCP stans for model context protocol https://modelcontextprotocol.io/introduction
 - Create necessary .gitignore entries
-- Update the README.md keep it minimal 
+- Update the README.md keep it minimal
 - Use this as an example https://github.com/modelcontextprotocol/python-sdk?tab=readme-ov-file#core-concepts
-- Do not use Fast API or other API management framework use Pure MCP eg uv add "mcp" 
+- Do not use Fast API or other API management framework use Pure MCP eg uv add "mcp"
 - use Fast MCP client
 
 

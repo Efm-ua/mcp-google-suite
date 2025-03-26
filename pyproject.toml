@@ -1,36 +1,88 @@
-[project]
-name = "mcp-google-suite"
-version = "0.1.0"
-description = "MCP server for Google Workspace (Drive, Docs, and Sheets) operations"
-authors = [
-    {name = "Lasius", email = "wordlord@lasius.io"},
-]
-dependencies = [
-    "mcp==1.1.3",
-    "google-auth>=2.28.1",
-    "google-auth-oauthlib>=1.2.0",
-    "google-auth-httplib2>=0.2.0",
-    "google-api-python-client>=2.120.0",
-    "pydantic>=2.6.3",
-    "tabulate>=0.9.0",
-    "starlette>=0.36.3",
-    "uvicorn>=0.27.1",
-]
-requires-python = ">=3.11"
-
-[project.scripts]
-# Main command for running the server
-mcp-google = "mcp_google_suite.launcher:main"
-# Command for running with environment variables and arguments
-mcp-google-run = "mcp_google_suite.launcher:run_server"
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.ruff]
-line-length = 88
-target-version = "py39"
+[project]
+name = "mcp-google-suite"
+version = "0.1.0"
+description = "MCP server for Google Workspace operations (Drive, Docs, and Sheets)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    { name = "Ashok", email = "ashokpokharel977@gmail.com" }
+]
+keywords = ["mcp", "google-workspace", "google-drive", "google-docs", "google-sheets", "ai", "cursor"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Office/Business :: Office Suites",
+    "Framework :: MCP",
+]
+dependencies = [
+    "google-auth-oauthlib>=1.0.0",
+    "google-auth>=2.22.0",
+    "google-api-python-client>=2.95.0",
+    "mcp>=0.1.0",
+    "pydantic>=2.0.0",
+    "uvicorn>=0.23.0",
+    "starlette>=0.31.0",
+    "tabulate>=0.9.0",
+]
 
-[tool.ruff.lint]
-select = ["E", "F", "B", "I"] 
+[project.urls]
+Homepage = "https://github.com/adexltd/mcp-google-suite"
+Documentation = "https://github.com/adexltd/mcp-google-suite/wiki"
+Repository = "https://github.com/adexltd/mcp-google-suite.git"
+Issues = "https://github.com/adexltd/mcp-google-suite/issues"
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pre-commit>=3.5.0",
+]
+
+[project.scripts]
+mcp-google = "mcp_google_suite.launcher:main"
+
+[project.entry-points.mcp_server]
+mcp-google-suite = "mcp_google_suite:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_google_suite"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+]
+ignore = []
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=mcp_google_suite --cov-report=term-missing"
