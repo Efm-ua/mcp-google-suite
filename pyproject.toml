@@ -53,7 +53,7 @@ dev = [
 ]
 
 [project.scripts]
-mcp-google = "mcp_google_suite.launcher:main"
+mcp-google-suite = "mcp_google_suite.launcher:main"
 
 [project.entry-points.mcp_server]
 mcp-google-suite = "mcp_google_suite:main"

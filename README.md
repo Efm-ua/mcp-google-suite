@@ -48,7 +48,7 @@ Using uvx (recommended):
   "mcpServers": {
     "mcp-google-suite": {
       "command": "uvx",
-      "args": ["mcp-google"],
+      "args": ["mcp-google-suite"],
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "~/.google/server-creds.json",
         "GOOGLE_OAUTH_CREDENTIALS": "~/.google/oauth.keys.json"
