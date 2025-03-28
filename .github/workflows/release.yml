@@ -9,45 +9,45 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.11"
-    
+
     - name: Cache uv installation
       uses: actions/cache@v3
       with:
         path: ~/.cargo/bin/uv
         key: ${{ runner.os }}-uv
-    
+
     - name: Install uv
       if: steps.cache-uv.outputs.cache-hit != 'true'
       run: |
         curl -LsSf https://astral.sh/uv/install.sh | sh
         uv --version
-    
+
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
         path: .venv
         key: ${{ runner.os }}-venv-${{ hashFiles('pyproject.toml') }}
-    
+
     - name: Install dependencies
       run: |
         uv venv
         . .venv/bin/activate
         uv pip install build twine
-    
+
     - name: Build package
       run: |
         . .venv/bin/activate
         python -m build
-    
+
     - name: Publish to PyPI
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       run: |
         . .venv/bin/activate
-        twine upload dist/* 
+        twine upload dist/*

@@ -5,9 +5,10 @@ import logging
 import sys
 from typing import Optional
 
-from mcp.server.stdio import stdio_server
-from mcp.server.models import InitializationOptions, ServerCapabilities
 from mcp.server import NotificationOptions
+from mcp.server.models import InitializationOptions
+from mcp.server.stdio import stdio_server
+
 from mcp_google_suite.server import GoogleWorkspaceMCPServer
 
 
@@ -36,11 +37,19 @@ def main() -> Optional[int]:
         async def run_server():
             try:
                 async with stdio_server() as (read_stream, write_stream):
-                    await server.run(read_stream, write_stream, init_options)
-            except KeyboardInterrupt:
-                logger.info("Server stopped by user")
+                    try:
+                        await server.run(read_stream, write_stream, init_options)
+                    except KeyboardInterrupt:
+                        logger.info("Server stopped by user")
+                    except Exception as e:
+                        logger.error(f"Server error: {e}", exc_info=True)
+                        raise
+                    finally:
+                        # Ensure streams are properly closed
+                        await read_stream.aclose()
+                        await write_stream.aclose()
             except Exception as e:
-                logger.error(f"Server error: {e}", exc_info=True)
+                logger.error(f"Failed to start server: {e}", exc_info=True)
                 raise
 
         asyncio.run(run_server())
@@ -54,4 +63,4 @@ def main() -> Optional[int]:
 
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())

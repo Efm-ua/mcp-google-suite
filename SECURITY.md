@@ -40,4 +40,4 @@ When using this package:
 3. **Data Protection**
    - Be cautious with document/file permissions
    - Regularly audit file access
-   - Use secure transport modes (HTTPS) 
+   - Use secure transport modes (HTTPS)

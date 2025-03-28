@@ -30,4 +30,4 @@ Paste any error messages or stack traces here
  - Package Version: [e.g. 1.0.0]
 
 **Additional context**
-Add any other context about the problem here. 
+Add any other context about the problem here.
