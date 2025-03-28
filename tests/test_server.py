@@ -1,6 +1,7 @@
 """Integration test for MCP server."""
 
 import pytest
+
 from mcp_google_suite.config import Config
 from mcp_google_suite.server import GoogleWorkspaceMCPServer
 

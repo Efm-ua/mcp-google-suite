@@ -5,6 +5,7 @@ import sys
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
+
 # Configure logging
 logging.basicConfig(
     level=logging.DEBUG,

@@ -6,6 +6,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+
 # Default paths
 DEFAULT_GOOGLE_DIR = os.path.expanduser("~/.google")
 DEFAULT_SERVER_CREDS = os.path.join(DEFAULT_GOOGLE_DIR, "server-creds.json")

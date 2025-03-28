@@ -71,6 +71,7 @@ include = '\.pyi?$'
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = [
@@ -107,6 +108,14 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+lines-after-imports = 2
+extra-standard-library = []
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+known-first-party = ["mcp_google_suite"]
+known-third-party = ["pytest", "mcp"]
 
 [tool.ruff.format]
 quote-style = "double"
