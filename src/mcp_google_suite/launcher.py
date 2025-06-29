@@ -81,7 +81,7 @@ def authenticate(config_path: str = None):
     """Run the authentication flow."""
     config = Config.load(config_path)
     auth = GoogleAuth(config)
-    auth.authenticate()
+    asyncio.run(auth.authenticate())
 
 
 def main():

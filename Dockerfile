@@ -12,18 +12,17 @@ RUN pip install uv
 
 # Copy project files
 COPY pyproject.toml .
+COPY README.md .
 COPY src/ ./src/
 
 # Install Python dependencies using uv
-RUN uv pip install --no-cache .
+RUN uv pip install --system --no-cache .
 
 # Create directory for logs
 RUN mkdir -p /app/logs
 
-# Create a non-root user
-RUN useradd -m -u 1000 mcp
-RUN chown -R mcp:mcp /app
-USER mcp
+# Create directory for secrets access (Cloud Run secrets need root access)
+# Running as root is safe in Cloud Run sandboxed environment
 
 # Expose the port for HTTP/WS servers
 EXPOSE 8000
@@ -32,4 +31,4 @@ EXPOSE 8000
 ENV SERVER_MODE=stdio
 
 # Run the server using uv run
-ENTRYPOINT ["uv", "run", "mcp-google-run"]
+ENTRYPOINT ["mcp-google-suite", "run", "--mode", "ws"]

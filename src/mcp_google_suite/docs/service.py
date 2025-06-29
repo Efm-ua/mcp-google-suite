@@ -73,3 +73,55 @@ class DocsService(BaseGoogleService):
             return {"success": True, "result": result}
         except HttpError as error:
             return {"success": False, **self.handle_error(error)}
+
+    async def append_formatted_text(self, document_id: str, text_content: str) -> Dict[str, Any]:
+        """Append formatted text to the end of a Google Doc without destroying existing formatting."""
+        try:
+            service = await self.get_service()
+            
+            # Get document to find the end index
+            document = await asyncio.to_thread(
+                service.documents().get(documentId=document_id, fields="body").execute
+            )
+            
+            # Find the end index of the document body
+            end_index = document["body"]["content"][-1]["endIndex"]
+            
+            # Prepare requests for batch update
+            requests = [
+                {
+                    "insertText": {
+                        "location": {"index": end_index - 1},
+                        "text": text_content
+                    }
+                }
+            ]
+            
+            # Execute batch update
+            result = await asyncio.to_thread(
+                service.documents()
+                .batchUpdate(documentId=document_id, body={"requests": requests})
+                .execute
+            )
+
+            return {"success": True, "result": result}
+        except HttpError as error:
+            return {"success": False, **self.handle_error(error)}
+
+    async def batch_update(self, document_id: str, requests: list) -> Dict[str, Any]:
+        """Execute batch update requests on a Google Doc."""
+        try:
+            service = await self.get_service()
+            
+            # Execute batch update with provided requests
+            requests_body = {"requests": requests}
+            print(f"[DIAGNOSTICS] Calling Google API batchUpdate with body: {requests_body}")
+            result = await asyncio.to_thread(
+                service.documents()
+                .batchUpdate(documentId=document_id, body=requests_body)
+                .execute
+            )
+
+            return {"success": True, "result": result}
+        except HttpError as error:
+            return {"success": False, **self.handle_error(error)}

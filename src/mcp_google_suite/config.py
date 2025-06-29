@@ -9,8 +9,10 @@ from pydantic import BaseModel, Field
 
 # Default paths
 DEFAULT_GOOGLE_DIR = os.path.expanduser("~/.google")
-DEFAULT_SERVER_CREDS = os.path.join(DEFAULT_GOOGLE_DIR, "server-creds.json")
-DEFAULT_OAUTH_CREDS = os.path.join(DEFAULT_GOOGLE_DIR, "oauth.keys.json")
+# Use environment variable for server credentials path if available
+DEFAULT_SERVER_CREDS = os.getenv("SERVER_CREDENTIALS_PATH", os.path.join(DEFAULT_GOOGLE_DIR, "server-creds.json"))
+# Use environment variable for OAuth credentials path if available
+DEFAULT_OAUTH_CREDS = os.getenv("OAUTH_CREDENTIALS_PATH", os.path.join(DEFAULT_GOOGLE_DIR, "oauth.keys.json"))
 
 
 class CredentialsConfig(BaseModel):

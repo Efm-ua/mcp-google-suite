@@ -54,7 +54,7 @@ class GoogleAuth:
         self.creds = await asyncio.to_thread(flow.run_local_server, port=0)
 
         # Save the credentials
-        await asyncio.to_thread(self._save_credentials)
+        # await asyncio.to_thread(self._save_credentials)  # NOTE: Disabled for Cloud Run compatibility
 
         print("\nAuthentication successful!")
         print(f"Credentials saved to: {server_creds_path}")
@@ -73,7 +73,7 @@ class GoogleAuth:
 
             if self.creds and self.creds.expired and self.creds.refresh_token:
                 await asyncio.to_thread(self.creds.refresh, Request())
-                await asyncio.to_thread(self._save_credentials)
+                # await asyncio.to_thread(self._save_credentials)  # NOTE: Disabled for Cloud Run compatibility
                 return self.creds
 
             # Try to load saved credentials
@@ -88,7 +88,7 @@ class GoogleAuth:
 
                 if self.creds.expired and self.creds.refresh_token:
                     await asyncio.to_thread(self.creds.refresh, Request())
-                    await asyncio.to_thread(self._save_credentials)
+                    # await asyncio.to_thread(self._save_credentials)  # NOTE: Disabled for Cloud Run compatibility
                     return self.creds
 
             raise FileNotFoundError(

@@ -1,0 +1,72 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: mcp-gsuite-server
+  namespace: "778416671000"
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "10"
+        autoscaling.knative.dev/minScale: "0"
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/sandbox: gvisor
+        run.googleapis.com/cpu-throttling: "true"
+    spec:
+      containerConcurrency: 50
+      timeoutSeconds: 300
+      serviceAccountName: backend-cloudrun@docgem-ocr-poc.iam.gserviceaccount.com
+      containers:
+      - image: us-central1-docker.pkg.dev/docgem-ocr-poc/docgem-docker/mcp-gsuite-server:v1.0.0
+        name: mcp-gsuite-server
+        ports:
+        - containerPort: 8000
+          protocol: TCP
+        env:
+        - name: SERVER_MODE
+          value: "ws"
+        - name: HOST
+          value: "0.0.0.0"
+        - name: PORT
+          value: "8000"
+        - name: OAUTH_CREDENTIALS_PATH
+          value: "/etc/secrets/gsuite_credentials.json"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "0.5"
+            memory: "256Mi"
+        volumeMounts:
+        - name: gsuite-credentials
+          mountPath: /etc/secrets
+          readOnly: true
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 12
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          periodSeconds: 30
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: gsuite-credentials
+        secret:
+          secretName: gsuite-oauth-credentials
+          items:
+          - key: "1"
+            path: gsuite_credentials.json
+  traffic:
+  - percent: 100
+    latestRevision: true 

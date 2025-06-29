@@ -118,6 +118,34 @@ class GoogleWorkspaceMCPServer:
                 },
             ),
             types.Tool(
+                name="docs_append_formatted_text",
+                description="Append formatted text to the end of a Google Doc without destroying existing formatting",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "document_id": {"type": "string", "description": "ID of the document"},
+                        "text_content": {"type": "string", "description": "Text content to append"},
+                    },
+                    "required": ["document_id", "text_content"],
+                },
+            ),
+            types.Tool(
+                name="docs_batch_update",
+                description="Execute batch update requests on a Google Doc",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "document_id": {"type": "string", "description": "ID of the document"},
+                        "requests": {
+                            "type": "array", 
+                            "description": "List of batch update requests compatible with Google Docs API batchUpdate",
+                            "items": {"type": "object"}
+                        },
+                    },
+                    "required": ["document_id", "requests"],
+                },
+            ),
+            types.Tool(
                 name="sheets_create",
                 description="Create a new Google Sheet",
                 inputSchema={
@@ -332,9 +360,27 @@ class GoogleWorkspaceMCPServer:
             raise ValueError("Document ID is required")
 
         logger.debug(f"Getting document content - ID: {document_id}")
-        result = await context.docs.get_document_content(document_id=document_id)
-        logger.debug("Document content retrieved successfully")
-        return result
+        result = await context.docs.get_document(document_id=document_id)
+        
+        if not result.get("success", False):
+            raise Exception(f"Failed to get document: {result.get('error', 'Unknown error')}")
+        
+        # Extract text content from the document
+        document = result["document"]
+        content_parts = []
+        
+        if "body" in document and "content" in document["body"]:
+            for element in document["body"]["content"]:
+                if "paragraph" in element:
+                    paragraph = element["paragraph"]
+                    if "elements" in paragraph:
+                        for elem in paragraph["elements"]:
+                            if "textRun" in elem and "content" in elem["textRun"]:
+                                content_parts.append(elem["textRun"]["content"])
+        
+        full_content = "".join(content_parts)
+        logger.debug(f"Document content retrieved successfully - {len(full_content)} characters")
+        return {"content": full_content}
 
     async def _handle_docs_update_content(
         self, context: GoogleWorkspaceContext, arguments: dict
@@ -350,7 +396,57 @@ class GoogleWorkspaceMCPServer:
         result = await context.docs.update_document_content(
             document_id=document_id, content=content
         )
+        
+        if not result.get("success", False):
+            raise Exception(f"Failed to update document: {result.get('error', 'Unknown error')}")
+        
         logger.debug("Document content updated successfully")
+        return result
+
+    async def _handle_docs_append_formatted_text(
+        self, context: GoogleWorkspaceContext, arguments: dict
+    ) -> Dict[str, Any]:
+        """Handle docs append formatted text requests."""
+        document_id = arguments.get("document_id")
+        text_content = arguments.get("text_content")
+
+        if not document_id or text_content is None:
+            raise ValueError("Both document_id and text_content are required")
+
+        logger.debug(f"Appending formatted text to document - ID: {document_id}, Text length: {len(text_content)}")
+        result = await context.docs.append_formatted_text(
+            document_id=document_id, text_content=text_content
+        )
+        
+        if not result.get("success", False):
+            raise Exception(f"Failed to append text to document: {result.get('error', 'Unknown error')}")
+        
+        logger.debug("Formatted text appended successfully")
+        return result
+
+    async def _handle_docs_batch_update(
+        self, context: GoogleWorkspaceContext, arguments: dict
+    ) -> Dict[str, Any]:
+        """Handle docs batch update requests."""
+        logger.debug(f"[DIAGNOSTICS] Handling docs_batch_update with args: {arguments}")
+        document_id = arguments.get("document_id")
+        requests = arguments.get("requests")
+
+        if not document_id or requests is None:
+            raise ValueError("Both document_id and requests are required")
+
+        if not isinstance(requests, list):
+            raise ValueError("requests must be a list")
+
+        logger.debug(f"Executing batch update on document - ID: {document_id}, Requests count: {len(requests)}")
+        result = await context.docs.batch_update(
+            document_id=document_id, requests=requests
+        )
+        
+        if not result.get("success", False):
+            raise Exception(f"Failed to execute batch update: {result.get('error', 'Unknown error')}")
+        
+        logger.debug("Batch update executed successfully")
         return result
 
     async def _handle_sheets_create(

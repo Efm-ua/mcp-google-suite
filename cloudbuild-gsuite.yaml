@@ -1,0 +1,41 @@
+steps:
+  # 1. Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/docgem-ocr-poc/docgem-docker/mcp-gsuite-server:$BUILD_ID'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/docgem-ocr-poc/docgem-docker/mcp-gsuite-server:latest'
+      - '.'
+    id: 'Build Image'
+
+  # 2. Push the Docker image to Google Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - 'us-central1-docker.pkg.dev/docgem-ocr-poc/docgem-docker/mcp-gsuite-server'
+    id: 'Push Image'
+
+  # 3. Deploy the service to Cloud Run with secrets
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'Deploy Service'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'mcp-gsuite-server'
+      - '--image=us-central1-docker.pkg.dev/docgem-ocr-poc/docgem-docker/mcp-gsuite-server:$BUILD_ID'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--port=8000'
+      - '--project=docgem-ocr-poc'
+      - '--update-secrets=/secrets/gsuite-creds/oauth.keys.json=gsuite-oauth-credentials:latest,/secrets/gsuite-token/server-creds.json=gsuite-oauth-token:latest'
+      - '--set-env-vars=OAUTH_CREDENTIALS_PATH=/secrets/gsuite-creds/oauth.keys.json,SERVER_CREDENTIALS_PATH=/secrets/gsuite-token/server-creds.json'
+
+# Specify the image to be created
+images:
+  - 'us-central1-docker.pkg.dev/docgem-ocr-poc/docgem-docker/mcp-gsuite-server:$BUILD_ID'
+  - 'us-central1-docker.pkg.dev/docgem-ocr-poc/docgem-docker/mcp-gsuite-server:latest' 
