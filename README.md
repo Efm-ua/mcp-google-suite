@@ -1,5 +1,10 @@
 # MCP Google Suite Server
 
+> **📋 Fork Information**  
+> This is a forked repository from [adexltd/mcp-google-suite](https://github.com/adexltd/mcp-google-suite)  
+> **Fork URL:** https://github.com/Efm-ua/mcp-google-suite  
+> **Purpose:** Custom modifications and enhancements for DocGem project integration
+
 A Model Context Protocol (MCP) server for Google Workspace integration.
 
 ## Description
